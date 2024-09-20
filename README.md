@@ -8,4 +8,4 @@ run the server and move to the site and start two different browsers to log into
 
 ## Output
 
-![](output.gif)
+![](output2.gif)
