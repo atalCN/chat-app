@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+  <body>
+    <center><h1>Hello , Welcome to my chat site ! {{request.user}}</h1></center>
+    <br />
+    {% if request.user.is_authenticated %}
+    <center>
+      Logout the chat Page <a href="{% url 'logout-user' %}">Logout</a>
+    </center>
+    {% endif %}
+    <div
+      class="chat__item__container"
+      id="id_chat_item_container"
+      style="font-size: 20px"
+    >
+      <br />
+      <input type="text" id="id_message_send_input" />
+      <button type="submit" id="id_message_send_button">Send Message</button>
+      <br />
+      <br />
+    </div>
+    <script>
+      const chatSocket = new WebSocket("ws://" + window.location.host + "/");
+      chatSocket.onopen = function (e) {
+        console.log("The connection was setup successfully !");
+      };
+      chatSocket.onclose = function (e) {
+        console.log("Something unexpected happened !");
+      };
+      document.querySelector("#id_message_send_input").focus();
+      document.querySelector("#id_message_send_input").onkeyup = function (e) {
+        if (e.keyCode == 13) {
+          document.querySelector("#id_message_send_button").click();
+        }
+      };
+      document.querySelector("#id_message_send_button").onclick = function (e) {
+        var messageInput = document.querySelector(
+          "#id_message_send_input"
+        ).value;
+        chatSocket.send(
+          JSON.stringify({
+            message: messageInput,
+            username: "{{request.user.username}}",
+          })
+        );
+      };
+      chatSocket.onmessage = function (e) {
+        const data = JSON.parse(e.data);
+        var div = document.createElement("div");
+        div.innerHTML = data.username + " : " + data.message;
+        document.querySelector("#id_message_send_input").value = "";
+        document.querySelector("#id_chat_item_container").appendChild(div);
+      };
+    </script>
+  </body>
+</html>
+
+<!-- <!DOCTYPE html>
+<html>
+  <body>
+    <center><h1>Hello , Welcome to my chat site! {{request.user}}</h1></center>
+    <br />
+    {% if request.user.is_authenticated %}
+    <center>
+      Logout the chat Page <a href="{% url 'logout-user' %}">Logout</a>
+    </center>
+    {% endif %}
+    
+    <div id="video-container">
+      <video id="localVideo" autoplay muted></video>
+      <video id="remoteVideo" autoplay></video>
+    </div>
+    
+    <div class="chat__item__container" id="id_chat_item_container" style="font-size: 20px">
+      <br />
+      <input type="text" id="id_message_send_input" />
+      <button type="submit" id="id_message_send_button">Send Message</button>
+      <br /><br />
+    </div>
+
+    <script>
+      // WebSocket connection based on room name
+      const roomName = "{{ room_name }}";
+      const chatSocket = new WebSocket("ws://" + window.location.host + "/ws/chat/" + roomName + "/");
+
+      // WebRTC setup
+      let localStream;
+      let peerConnection;
+      const configuration = {'iceServers': [{'urls': 'stun:stun.l.google.com:19302'}]};
+
+      const localVideo = document.getElementById('localVideo');
+      const remoteVideo = document.getElementById('remoteVideo');
+
+      // Get local media stream
+      navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+        .then(stream => {
+          localVideo.srcObject = stream;
+          localStream = stream;
+        })
+        .catch(error => console.error('Error accessing media devices.', error));
+
+      // Create and send WebRTC offer
+      function initiateCall() {
+        createPeerConnection();
+        peerConnection.createOffer().then(offer => {
+          peerConnection.setLocalDescription(offer);
+          chatSocket.send(JSON.stringify({
+            'message': {
+              'offer': offer
+            },
+            'username': "{{request.user.username}}",
+          }));
+        });
+      }
+
+      function createPeerConnection() {
+        peerConnection = new RTCPeerConnection(configuration);
+
+        // Add local stream to peer connection
+        localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+
+        peerConnection.ontrack = function(event) {
+          remoteVideo.srcObject = event.streams[0];
+        };
+
+        peerConnection.onicecandidate = function(event) {
+          if (event.candidate) {
+            chatSocket.send(JSON.stringify({
+              'message': {
+                'candidate': event.candidate
+              },
+              'username': "{{request.user.username}}",
+            }));
+          }
+        };
+      }
+
+      // WebSocket message handling
+      chatSocket.onmessage = function(e) {
+        const data = JSON.parse(e.data);
+        const message = data.message;
+        const username = data.username;
+
+        if (message.offer) {
+          createPeerConnection();
+          peerConnection.setRemoteDescription(new RTCSessionDescription(message.offer));
+          peerConnection.createAnswer().then(answer => {
+            peerConnection.setLocalDescription(answer);
+            chatSocket.send(JSON.stringify({
+              'message': {
+                'answer': answer
+              },
+              'username': "{{request.user.username}}",
+            }));
+          });
+        } else if (message.answer) {
+          peerConnection.setRemoteDescription(new RTCSessionDescription(message.answer));
+        } else if (message.candidate) {
+          peerConnection.addIceCandidate(new RTCIceCandidate(message.candidate));
+        }
+
+        // Display chat messages
+        if (message.text) {
+          var div = document.createElement("div");
+          div.innerHTML = username + ": " + message.text;
+          document.querySelector("#id_chat_item_container").appendChild(div);
+        }
+      };
+
+      // Send chat message
+      document.querySelector("#id_message_send_button").onclick = function(e) {
+        var messageInput = document.querySelector("#id_message_send_input").value;
+        chatSocket.send(JSON.stringify({
+          'message': {
+            'text': messageInput
+          },
+          'username': "{{request.user.username}}",
+        }));
+      };
+    </script>
+  </body>
+</html> -->
